@@ -1,0 +1,25 @@
+name: 'Baneronetwo CLI Action'
+description: 'Display links to YouTube channel and GitHub profile with colored formatting'
+author: 'BANSAFAn'
+
+inputs:
+  format:
+    description: 'Output format (text, json, markdown)'
+    required: false
+    default: 'text'
+  username:
+    description: 'Username to display in the output'
+    required: false
+    default: ''
+
+outputs:
+  result:
+    description: 'The formatted output from the CLI command'
+
+runs:
+  using: 'node16'
+  main: 'action.js'
+
+branding:
+  icon: 'link'
+  color: 'blue'

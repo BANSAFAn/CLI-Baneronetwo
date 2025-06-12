@@ -1,0 +1,50 @@
+name: Test Baneronetwo CLI Action
+
+on:
+  workflow_dispatch:
+    inputs:
+      format:
+        description: 'Output format (text, json, markdown)'
+        required: false
+        default: 'text'
+        type: choice
+        options:
+          - text
+          - json
+          - markdown
+      username:
+        description: 'Username to display'
+        required: false
+        default: 'github-actions'
+        type: string
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Baneronetwo CLI Action
+        id: baneronetwo
+        uses: ./
+        with:
+          format: ${{ github.event.inputs.format }}
+          username: ${{ github.event.inputs.username }}
+
+      - name: Display result
+        run: echo "${{ steps.baneronetwo.outputs.result }}"
+
+      - name: Create artifact with result
+        uses: actions/upload-artifact@v3
+        with:
+          name: baneronetwo-output
+          path: baneronetwo-output.txt

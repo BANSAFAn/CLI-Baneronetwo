@@ -1,0 +1,54 @@
+name: Run Baneronetwo CLI
+
+on:
+  workflow_dispatch:
+    inputs:
+      output_format:
+        description: 'Output format (text, json, markdown)'
+        required: false
+        default: 'text'
+        type: choice
+        options:
+          - text
+          - json
+          - markdown
+
+jobs:
+  run-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run Baneronetwo CLI
+        id: run-cli
+        run: |
+          # Make script executable
+          chmod +x ./baneronetwo.sh
+          
+          # Run the script and capture output
+          OUTPUT=$(./baneronetwo.sh)
+          
+          # Format output based on user selection
+          if [[ "${{ github.event.inputs.output_format }}" == "json" ]]; then
+            # Convert to JSON format
+            JSON_OUTPUT=$(echo "$OUTPUT" | jq -R -s -c '{ "youtube": "https://www.youtube.com/@Baneronetwo", "github": "https://github.com/BANSAFAn", "username": "'"$USER"'" }')
+            echo "::set-output name=result::$JSON_OUTPUT"
+            echo "$JSON_OUTPUT"
+          elif [[ "${{ github.event.inputs.output_format }}" == "markdown" ]]; then
+            # Convert to Markdown format
+            MD_OUTPUT="# Baneronetwo Links\n\n- YouTube: [Baneronetwo](https://www.youtube.com/@Baneronetwo)\n- GitHub: [BANSAFAn](https://github.com/BANSAFAn)\n\nGenerated for user: $USER"
+            echo "::set-output name=result::$MD_OUTPUT"
+            echo "$MD_OUTPUT"
+          else
+            # Default text format
+            echo "::set-output name=result::$OUTPUT"
+            echo "$OUTPUT"
+          fi
+
+      - name: Create artifact with result
+        uses: actions/upload-artifact@v3
+        with:
+          name: baneronetwo-output
+          path: |
+            echo "${{ steps.run-cli.outputs.result }}" > baneronetwo-output.txt
