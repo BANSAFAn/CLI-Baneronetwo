@@ -1,0 +1,162 @@
+name: Scheduled Baneronetwo CLI Run (24/7)
+
+on:
+  schedule:
+    # Запуск каждый час
+    - cron: '0 * * * *'
+  # Также позволяет запускать вручную
+  workflow_dispatch:
+    inputs:
+      format:
+        description: 'Формат вывода'
+        required: true
+        default: 'text'
+        type: choice
+        options:
+          - text
+          - json
+          - markdown
+      username:
+        description: 'Имя пользователя'
+        required: false
+        default: 'github-actions-scheduled'
+        type: string
+
+jobs:
+  scheduled-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Get current time
+        id: time
+        run: echo "time=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+
+      - name: Run Baneronetwo CLI Action
+        id: baneronetwo
+        uses: ./
+        with:
+          format: ${{ github.event_name == 'workflow_dispatch' && inputs.format || 'text' }}
+          username: ${{ github.event_name == 'workflow_dispatch' && inputs.username || 'github-actions-scheduled' }}
+
+      - name: Create status file
+        run: |
+          mkdir -p status
+          echo "Last run: ${{ steps.time.outputs.time }}" > status/last_run.txt
+          echo "Status: Active (24/7)" >> status/last_run.txt
+          echo "Result:" >> status/last_run.txt
+          echo "${{ steps.baneronetwo.outputs.result }}" >> status/last_run.txt
+
+      - name: Upload status as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: baneronetwo-status
+          path: status/
+          retention-days: 1
+
+      # Опционально: отправка уведомления о выполнении
+      - name: Create status page
+        run: |
+          mkdir -p public
+          cat > public/index.html << 'EOL'
+          <!DOCTYPE html>
+          <html lang="ru">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="refresh" content="60">
+            <title>Baneronetwo CLI Status</title>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                line-height: 1.6;
+                color: #333;
+                background-color: #f9f9f9;
+              }
+              .status {
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                color: #155724;
+              }
+              .timestamp {
+                font-size: 0.9em;
+                color: #6c757d;
+              }
+              pre {
+                background-color: #f8f9fa;
+                padding: 15px;
+                border-radius: 5px;
+                overflow-x: auto;
+                border: 1px solid #eee;
+              }
+              h1, h2 {
+                color: #343a40;
+              }
+              footer {
+                margin-top: 30px;
+                font-size: 0.8em;
+                color: #6c757d;
+                text-align: center;
+                border-top: 1px solid #eee;
+                padding-top: 20px;
+              }
+              .github-link {
+                display: inline-block;
+                margin-top: 15px;
+                background-color: #24292e;
+                color: white;
+                padding: 8px 16px;
+                text-decoration: none;
+                border-radius: 4px;
+                font-weight: bold;
+              }
+              .github-link:hover {
+                background-color: #0366d6;
+              }
+            </style>
+          </head>
+          <body>
+            <h1>Baneronetwo CLI Status</h1>
+            <div class="status">
+              <h2>✅ Сервис активен и работает в режиме 24/7</h2>
+              <p class="timestamp">Последнее обновление: ${{ steps.time.outputs.time }}</p>
+            </div>
+            
+            <h2>Последний результат выполнения:</h2>
+            <pre>${{ steps.baneronetwo.outputs.result }}</pre>
+            
+            <p>Страница автоматически обновляется каждую минуту.</p>
+            <a href="https://github.com/${{ github.repository }}/actions/workflows/scheduled-run.yml" class="github-link">Просмотреть историю запусков</a>
+            
+            <footer>
+              <p>© Baneronetwo CLI - Работает 24/7 через GitHub Actions</p>
+            </footer>
+          </body>
+          </html>
+          EOL
+
+      - name: Deploy status page to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          keep_files: false
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Update status page [skip ci]'
