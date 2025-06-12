@@ -44,7 +44,7 @@ jobs:
         run: echo "${{ steps.baneronetwo.outputs.result }}"
 
       - name: Create artifact with result
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: baneronetwo-output
           path: baneronetwo-output.txt

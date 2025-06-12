@@ -57,7 +57,7 @@ jobs:
           echo "${{ steps.baneronetwo.outputs.result }}" >> status/last_run.txt
 
       - name: Upload status as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: baneronetwo-status
           path: status/

@@ -33,21 +33,21 @@ jobs:
           if [[ "${{ github.event.inputs.output_format }}" == "json" ]]; then
             # Convert to JSON format
             JSON_OUTPUT=$(echo "$OUTPUT" | jq -R -s -c '{ "youtube": "https://www.youtube.com/@Baneronetwo", "github": "https://github.com/BANSAFAn", "username": "'"$USER"'" }')
-            echo "::set-output name=result::$JSON_OUTPUT"
+            echo "result=$JSON_OUTPUT" >> $GITHUB_OUTPUT
             echo "$JSON_OUTPUT"
           elif [[ "${{ github.event.inputs.output_format }}" == "markdown" ]]; then
             # Convert to Markdown format
             MD_OUTPUT="# Baneronetwo Links\n\n- YouTube: [Baneronetwo](https://www.youtube.com/@Baneronetwo)\n- GitHub: [BANSAFAn](https://github.com/BANSAFAn)\n\nGenerated for user: $USER"
-            echo "::set-output name=result::$MD_OUTPUT"
+            echo "result=$MD_OUTPUT" >> $GITHUB_OUTPUT
             echo "$MD_OUTPUT"
           else
             # Default text format
-            echo "::set-output name=result::$OUTPUT"
+            echo "result=$OUTPUT" >> $GITHUB_OUTPUT
             echo "$OUTPUT"
           fi
 
       - name: Create artifact with result
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: baneronetwo-output
           path: |
